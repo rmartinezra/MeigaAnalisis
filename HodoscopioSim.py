@@ -1,15 +1,12 @@
 import json
 import csv
 import os
+import sys
+from tqdm import tqdm
 
 def parse_binary_counter(binary_counter):
     # Function to parse the binary counter string into channel values
-    # Assuming each channel value is represented by a bit in the string
-    channels = []
-    for i in range(len(binary_counter)):
-        channels.append(int(binary_counter[i]))  # Convert each character to an integer
-    
-    return channels
+    return [int(bit) for bit in binary_counter]  # List comprehension for efficiency
 
 def procesar_datos_meiga(input_file):
     # Check if the input file exists
@@ -22,7 +19,9 @@ def procesar_datos_meiga(input_file):
     
     unified_data = []
     
-    for event, event_data in data['Output'].items():
+    events = list(data['Output'].items())
+    
+    for event, event_data in tqdm(events, desc="Procesando eventos", ncols=100):
         if len(event_data) != 2:
             continue
         
@@ -43,13 +42,14 @@ def procesar_datos_meiga(input_file):
         channels_1 = parse_binary_counter(binary_counter_1)
         
         # Combine channels as required (ch00-ch59)
-        unified_row = [int(event.split('_')[-1])] + channels_0[:30] + channels_0[30:] + channels_1
+        unified_row = [int(event.split('_')[-1])] + channels_0 + channels_1
         
         # Agregar la fila unificada a los datos finales
         unified_data.append(unified_row)
     
-    # Escribir los datos unificados a un archivo CSV en el directorio actual
-    output_file = 'output_meiga.csv'
+    # Crear nombre de archivo de salida basado en el nombre del archivo de entrada
+    output_file = f"{os.path.splitext(input_file)[0]}_output_meiga.csv"
+    
     with open(output_file, 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
         
@@ -58,15 +58,18 @@ def procesar_datos_meiga(input_file):
         csvwriter.writerow(headers)
         
         # Escribir filas de datos
-        for row in unified_data:
-            csvwriter.writerow(row)
+        csvwriter.writerows(unified_data)  # Escribir todas las filas de una vez
     
     print(f"Archivo CSV generado: {output_file}")
 
 if __name__ == "__main__":
-    # Usar el nombre del archivo JSON directamente si está en el mismo directorio
-    input_file = 'output_00.json'
+    # Verificar que se haya proporcionado un argumento de archivo
+    if len(sys.argv) != 2:
+        print("Uso: python3 script.py <ruta_al_archivo_json>")
+        sys.exit(1)
+    
+    # Obtener la ruta del archivo JSON desde los argumentos de línea de comandos
+    input_file = sys.argv[1]
     procesar_datos_meiga(input_file)
-
 
 
