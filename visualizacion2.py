@@ -2,6 +2,14 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import argparse
+
+# Argumentos desde la línea de comandos
+parser = argparse.ArgumentParser(description="Genera un heatmap a partir de un archivo CSV.")
+parser.add_argument('filepath', type=str, help='Ruta al archivo CSV')
+parser.add_argument('--vmin', type=int, default=0, help='Valor mínimo para el rango de color en el heatmap')
+parser.add_argument('--vmax', type=int, default=100, help='Valor máximo para el rango de color en el heatmap')
+args = parser.parse_args()
 
 # Cargar el archivo CSV
 def load_data(filepath):
@@ -44,15 +52,16 @@ def create_heatmap(ch30_44, ch45_59, theta_x, theta_y, frecuencia, d):
     )
     
     plt.figure(figsize=(10, 8))
-    sns.heatmap(pivot_data, cmap='hot', annot=True, fmt="d", linewidths=.5, cbar_kws={'label': 'Frecuencia de Eventos'})
+    sns.heatmap(pivot_data, cmap='inferno', annot=False, vmin=args.vmin, vmax=args.vmax, fmt="d", linewidths=.5, cbar_kws={'label': 'Frecuencia de Eventos'})
     plt.title('Mapa de Calor de Trayectorias: Proyección y Posición Final')
     plt.xlabel('Proyección X Inicial')
     plt.ylabel('Proyección Y Inicial')
-    plt.show()
+    plt.savefig('heatmap.png')  # Guardar el heatmap como imagen PNG
+    plt.close()
 
-# Ejemplo de uso
-filepath = 'coincidencias_cuaternas_activaciones.csv'  # Reemplazar con la ruta al archivo CSV
-data = load_data(filepath)
+# Ejecutar las funciones
+data = load_data(args.filepath)
 ch30_44, ch45_59, theta_x, theta_y, frecuencia, d = preprocess_data(data)
 create_heatmap(ch30_44, ch45_59, theta_x, theta_y, frecuencia, d)
+
 
